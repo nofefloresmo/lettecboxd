@@ -40,6 +40,7 @@ dependencies:
   auto_size_text: ^3.0.0
   firebase_auth: ^4.16.0
   firebase_storage: ^11.6.0
+  image_picker: ^1.0.8
 
 dev_dependencies:
   flutter_test:
@@ -64,8 +65,10 @@ flutter:
   uses-material-design: true
 
   # To add assets to your application, add an assets section, like this:
-  # assets:
-  #   - assets/json/movies.json
+  assets:
+    - assets/default_assets/default_pfp.jpg
+    - assets/default_assets/admin_pfp.jpg
+    - assets/default_assets/admin_banner.jpg
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

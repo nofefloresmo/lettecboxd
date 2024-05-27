@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/movie_model.dart';
-import 'movie_page.dart';
 import 'login_page.dart';
-import 'add_movie_page.dart'; // Página para agregar nuevas películas
-import 'my_reviews_page.dart'; // Página de reseñas del usuario
+import 'add_movie_page.dart';
+import 'movie_page.dart';
+import 'my_reviews_page.dart';
+import 'settings_page.dart';
 
 class HomePage extends StatelessWidget {
   final User user;
@@ -50,18 +51,6 @@ class AdminHomePage extends StatefulWidget {
 }
 
 class _AdminHomePageState extends State<AdminHomePage> {
-  List<Movie> _movies = [];
-
-  @override
-  void initState() {
-    super.initState();
-    Movie.loadMovies().then((movies) {
-      setState(() {
-        _movies = movies;
-      });
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -73,7 +62,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
             DrawerHeader(
               decoration: const BoxDecoration(
                 image: DecorationImage(
-                  image: AssetImage("assets/banners/BTTF.png"),
+                  image: AssetImage("assets/default_assets/admin_banner.png"),
                   fit: BoxFit.cover,
                 ),
               ),
@@ -83,7 +72,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
                 alignment: Alignment.center,
                 child: const CircleAvatar(
                   radius: 50,
-                  backgroundImage: AssetImage("assets/banners/DH.jpg"),
+                  backgroundImage:
+                      AssetImage("assets/default_assets/admin_pfp.jpg"),
                 ),
               ),
             ),
@@ -160,14 +150,30 @@ class RegularHomePage extends StatefulWidget {
 
 class _RegularHomePageState extends State<RegularHomePage> {
   List<Movie> _movies = [];
+  String? profilePictureUrl;
+  String? bannerPictureUrl;
+  String username = '';
 
   @override
   void initState() {
     super.initState();
+    _loadUserProfile();
     Movie.loadMovies().then((movies) {
       setState(() {
         _movies = movies;
       });
+    });
+  }
+
+  Future<void> _loadUserProfile() async {
+    DocumentSnapshot doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(widget.user.uid)
+        .get();
+    setState(() {
+      profilePictureUrl = doc['profilePicture'];
+      bannerPictureUrl = doc['bannerPicture'];
+      username = doc['username'];
     });
   }
 
@@ -180,19 +186,36 @@ class _RegularHomePageState extends State<RegularHomePage> {
         child: ListView(
           children: [
             DrawerHeader(
-              decoration: const BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage("assets/banners/BTTF.png"),
-                  fit: BoxFit.cover,
-                ),
+              decoration: BoxDecoration(
+                image: bannerPictureUrl != null && bannerPictureUrl!.isNotEmpty
+                    ? DecorationImage(
+                        image: NetworkImage(bannerPictureUrl!),
+                        fit: BoxFit.cover,
+                      )
+                    : null,
               ),
               child: Container(
                 height: double.infinity,
                 width: double.infinity,
                 alignment: Alignment.center,
-                child: const CircleAvatar(
+                child: CircleAvatar(
                   radius: 50,
-                  backgroundImage: AssetImage("assets/banners/DH.jpg"),
+                  child: ClipOval(
+                    child: profilePictureUrl != null &&
+                            profilePictureUrl!.isNotEmpty
+                        ? Image.network(
+                            profilePictureUrl!,
+                            width: 100,
+                            height: 100,
+                            fit: BoxFit.cover,
+                          )
+                        : Image.asset(
+                            "assets/default_assets/default_pfp.jpg",
+                            width: 100,
+                            height: 100,
+                            fit: BoxFit.cover,
+                          ),
+                  ),
                 ),
               ),
             ),
@@ -271,6 +294,46 @@ class _RegularHomePageState extends State<RegularHomePage> {
                     context,
                     MaterialPageRoute(
                         builder: (context) => const MyReviewsPage()));
+              },
+            ),
+            ListTile(
+              title: Row(
+                children: [
+                  Expanded(
+                    child: Icon(Icons.settings,
+                        color: Colors.amber,
+                        size: 30,
+                        shadows: [
+                          Shadow(color: Colors.amber, blurRadius: 18),
+                          Shadow(
+                              color: Colors.amber.withOpacity(0.5),
+                              blurRadius: 28),
+                        ]),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      'Configuración',
+                      style: TextStyle(
+                        color: Colors.amber,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        shadows: [
+                          Shadow(color: Colors.amber, blurRadius: 18),
+                          Shadow(
+                              color: Colors.amber.withOpacity(0.5),
+                              blurRadius: 28),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              onTap: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => SettingsPage(user: widget.user)));
               },
             ),
             ListTile(
