@@ -1,15 +1,57 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+class HomePage extends StatelessWidget {
+  final User user;
 
-  @override
-  State<HomePage> createState() => _HomePageState();
-}
+  const HomePage({Key? key, required this.user}) : super(key: key);
 
-class _HomePageState extends State<HomePage> {
+  Future<String> getUserRole() async {
+    DocumentSnapshot doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+    return doc['role'];
+  }
+
   @override
   Widget build(BuildContext context) {
-    return const Placeholder();
+    return FutureBuilder(
+      future: getUserRole(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return CircularProgressIndicator();
+        }
+        if (snapshot.hasError) {
+          return Text('Error: ${snapshot.error}');
+        }
+        if (snapshot.data == 'admin') {
+          return AdminHomePage();
+        } else {
+          return RegularHomePage();
+        }
+      },
+    );
+  }
+}
+
+class AdminHomePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Admin Home')),
+      body: Center(child: Text('Welcome Admin')),
+    );
+  }
+}
+
+class RegularHomePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Home')),
+      body: Center(child: Text('Welcome User')),
+    );
   }
 }

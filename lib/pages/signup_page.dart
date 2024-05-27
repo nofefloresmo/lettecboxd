@@ -4,18 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'home_page.dart';
-import 'signup_page.dart';
 import '../widgets/login_widget.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+class SignUpPage extends StatefulWidget {
+  const SignUpPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  _SignUpPageState createState() => _SignUpPageState();
 }
 
-class _LoginPageState extends State<LoginPage>
+class _SignUpPageState extends State<SignUpPage>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller; // Controlador de animación
   Timer? _flickerTimer; // Temporizador para el parpadeo de neon
@@ -48,37 +46,29 @@ class _LoginPageState extends State<LoginPage>
     });
   }
 
-  Future<void> loginUser() async {
+  Future<void> signupUser() async {
     try {
       UserCredential userCredential =
-          await FirebaseAuth.instance.signInWithEmailAndPassword(
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+
+      // Almacenar información del usuario en Firestore
+      FirebaseFirestore.instance
           .collection('users')
           .doc(userCredential.user!.uid)
-          .get();
+          .set({
+        'email': _emailController.text.trim(),
+        'role': 'regular', // o 'admin' dependiendo del rol del usuario
+      });
 
-      if (!userDoc.exists) {
-        throw FirebaseAuthException(
-          code: 'user-not-found',
-          message: 'User document does not exist.',
-        );
-      }
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-            builder: (context) => HomePage(user: userCredential.user!)),
-      );
-    } catch (e) {
+      Navigator.pop(context);
+    } on FirebaseAuthException catch (e) {
       print('Error: $e');
-      // Mostrar mensaje de error
-      // Si ocurre un error durante el inicio de sesión, se captura y se muestra un mensaje de error.
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-              "Error al Iniciar Sesión, Usuario o Contraseña incorrectas."),
+          content: Text("Error al registrarse. Por favor, intenta de nuevo."),
         ),
       );
     }
@@ -101,6 +91,7 @@ class _LoginPageState extends State<LoginPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(title: const Text('Sign Up')),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -136,18 +127,6 @@ class _LoginPageState extends State<LoginPage>
                 child: login.getLogo(30),
               ),
               SizedBox(height: 80),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Login',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w300,
-                  ),
-                ),
-              ),
-              SizedBox(height: 10),
               Container(
                 width: 360,
                 height: 35,
@@ -176,7 +155,8 @@ class _LoginPageState extends State<LoginPage>
                         labelText: 'Email',
                         fillColor: Colors.white.withOpacity(0.05),
                         filled: true,
-                        prefixIcon: Icon(Icons.person, color: Colors.pink),
+                        prefixIcon:
+                            const Icon(Icons.person, color: Colors.pink),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(20),
                         ),
@@ -188,14 +168,14 @@ class _LoginPageState extends State<LoginPage>
                         return null;
                       },
                     ),
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
                     TextFormField(
                       controller: _passwordController,
                       decoration: InputDecoration(
                         labelText: 'Password',
                         fillColor: Colors.white.withOpacity(0.05),
                         filled: true,
-                        prefixIcon: Icon(Icons.lock, color: Colors.pink),
+                        prefixIcon: const Icon(Icons.lock, color: Colors.pink),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(20),
                         ),
@@ -208,24 +188,14 @@ class _LoginPageState extends State<LoginPage>
                         return null;
                       },
                     ),
-                    SizedBox(height: 40),
+                    const SizedBox(height: 20),
                     ElevatedButton(
                       onPressed: () {
                         if (_formKey.currentState!.validate()) {
-                          loginUser();
+                          signupUser();
                         }
                       },
-                      child: const Text('Login'),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => SignUpPage()),
-                        );
-                      },
-                      child:
-                          const Text('No tienes una cuenta? registrate aquí'),
+                      child: const Text('Sign Up'),
                     ),
                   ],
                 ),
