@@ -21,6 +21,7 @@ class _SignUpPageState extends State<SignUpPage>
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _usernameController = TextEditingController();
   // Instancia de la clase LoginWidget que contiene aspectos de diseño del login
   final login = LoginWidget();
 
@@ -60,7 +61,10 @@ class _SignUpPageState extends State<SignUpPage>
           .doc(userCredential.user!.uid)
           .set({
         'email': _emailController.text.trim(),
+        'username': _usernameController.text.trim(),
         'role': 'regular', // o 'admin' dependiendo del rol del usuario
+        'profilePicture': '', // Inicialmente vacío
+        'bannerPicture': '', // Inicialmente vacío
       });
 
       Navigator.pop(context);
@@ -85,6 +89,7 @@ class _SignUpPageState extends State<SignUpPage>
     _controller.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _usernameController.dispose();
     _formKey.currentState?.dispose();
   }
 
@@ -184,6 +189,26 @@ class _SignUpPageState extends State<SignUpPage>
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Por favor introduce tu contraseña';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    TextFormField(
+                      controller: _usernameController,
+                      decoration: InputDecoration(
+                        labelText: 'Nombre de usuario',
+                        fillColor: Colors.white.withOpacity(0.05),
+                        filled: true,
+                        prefixIcon: const Icon(Icons.account_circle,
+                            color: Colors.pink),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Por favor introduce tu nombre de usuario';
                         }
                         return null;
                       },
