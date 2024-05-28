@@ -67,6 +67,16 @@ class _SignUpPageState extends State<SignUpPage>
         'bannerPicture': '', // Inicialmente vacío
       });
 
+      // Mostrar el Snackbar de confirmación
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content:
+              Text('Registro exitoso! Bienvenido ${_usernameController.text}'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      // Navegar de regreso a la página de inicio de sesión u otra página
       Navigator.pop(context);
     } on FirebaseAuthException catch (e) {
       print('Error: $e');
@@ -103,7 +113,7 @@ class _SignUpPageState extends State<SignUpPage>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              SizedBox(height: 170),
+              SizedBox(height: 110),
               Container(
                 width: 300,
                 height: 80,

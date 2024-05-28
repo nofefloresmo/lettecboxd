@@ -17,17 +17,17 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   final _usernameController = TextEditingController();
   File? _profileImage;
-  File? _bannerImage;
+  String? profilePictureUrl;
+  String _selectedBanner = '';
+  final List<String> _bannerList = [];
+  final _confirmDeleteController = TextEditingController();
+  final _passwordController = TextEditingController();
 
-  Future<void> _pickImage(ImageSource source, bool isProfile) async {
+  Future<void> _pickImage(ImageSource source) async {
     final pickedFile = await ImagePicker().pickImage(source: source);
     if (pickedFile != null) {
       setState(() {
-        if (isProfile) {
-          _profileImage = File(pickedFile.path);
-        } else {
-          _bannerImage = File(pickedFile.path);
-        }
+        _profileImage = File(pickedFile.path);
       });
     }
   }
@@ -41,19 +41,10 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _updateUserProfile() async {
     String? profileImageUrl;
-    String? bannerImageUrl;
-
     if (_profileImage != null) {
       profileImageUrl = await _uploadImage(
         _profileImage!,
         'profiles/${widget.user.uid}/profile.jpg',
-      );
-    }
-
-    if (_bannerImage != null) {
-      bannerImageUrl = await _uploadImage(
-        _bannerImage!,
-        'profiles/${widget.user.uid}/banner.jpg',
       );
     }
 
@@ -63,7 +54,7 @@ class _SettingsPageState extends State<SettingsPage> {
         .update({
       'username': _usernameController.text.trim(),
       if (profileImageUrl != null) 'profilePicture': profileImageUrl,
-      if (bannerImageUrl != null) 'bannerPicture': bannerImageUrl,
+      'bannerPicture': _selectedBanner,
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -83,10 +74,47 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
+  Future<void> _reauthenticateAndDeleteAccount(String password) async {
+    try {
+      final credential = EmailAuthProvider.credential(
+        email: widget.user.email!,
+        password: password,
+      );
+
+      await widget.user.reauthenticateWithCredential(credential);
+
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(widget.user.uid)
+          .delete();
+      await widget.user.delete();
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => LoginPage()),
+      );
+    } on FirebaseAuthException catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al eliminar la cuenta: ${e.message}')),
+      );
+    }
+  }
+
+  Future<void> _loadBanners() async {
+    final ListResult result =
+        await FirebaseStorage.instance.ref('banners').listAll();
+    final List<String> urls = await Future.wait(
+        result.items.map((Reference ref) => ref.getDownloadURL()).toList());
+
+    setState(() {
+      _bannerList.addAll(urls);
+    });
+  }
+
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    _loadBanners();
   }
 
   Future<void> _loadUserData() async {
@@ -95,8 +123,56 @@ class _SettingsPageState extends State<SettingsPage> {
         .doc(widget.user.uid)
         .get();
     setState(() {
+      profilePictureUrl = doc['profilePicture'];
       _usernameController.text = doc['username'];
     });
+  }
+
+  void _showDeleteDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Confirmar eliminación de cuenta'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                  'Escribe "confirmar" si deseas continuar con la eliminación de tu cuenta'),
+              TextFormField(
+                controller: _confirmDeleteController,
+                decoration: InputDecoration(hintText: 'confirmar'),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                  'Por favor, introduce tu contraseña para confirmar la eliminación de la cuenta'),
+              TextFormField(
+                controller: _passwordController,
+                decoration: InputDecoration(hintText: 'Contraseña'),
+                obscureText: true,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (_confirmDeleteController.text == 'confirmar') {
+                  _reauthenticateAndDeleteAccount(_passwordController.text);
+                  Navigator.pop(context);
+                }
+              },
+              child: Text('Aceptar'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -105,10 +181,42 @@ class _SettingsPageState extends State<SettingsPage> {
       appBar: AppBar(
         title: Text('Configuración'),
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
-        child: ListView(
+        child: Column(
           children: [
+            Stack(
+              children: [
+                CircleAvatar(
+                  radius: 80,
+                  child: ClipOval(
+                    child: profilePictureUrl != null &&
+                            profilePictureUrl!.isNotEmpty
+                        ? Image.network(
+                            profilePictureUrl!,
+                            width: 160,
+                            height: 160,
+                            fit: BoxFit.cover,
+                          )
+                        : Image.asset(
+                            "assets/default_assets/default_pfp.jpg",
+                            width: 160,
+                            height: 160,
+                            fit: BoxFit.cover,
+                          ),
+                  ),
+                ),
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: FloatingActionButton.small(
+                    onPressed: () => _pickImage(ImageSource.gallery),
+                    child: Icon(Icons.edit),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
             TextFormField(
               controller: _usernameController,
               decoration: InputDecoration(
@@ -119,20 +227,30 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ),
             const SizedBox(height: 20),
-            _profileImage == null
-                ? Text('No se ha seleccionado una foto de perfil.')
-                : Image.file(_profileImage!),
-            ElevatedButton(
-              onPressed: () => _pickImage(ImageSource.gallery, true),
-              child: Text('Seleccionar Foto de Perfil'),
-            ),
-            const SizedBox(height: 20),
-            _bannerImage == null
-                ? Text('No se ha seleccionado un banner.')
-                : Image.file(_bannerImage!),
-            ElevatedButton(
-              onPressed: () => _pickImage(ImageSource.gallery, false),
-              child: Text('Seleccionar Banner'),
+            DropdownButtonFormField<String>(
+              value: _selectedBanner.isEmpty ? null : _selectedBanner,
+              items: _bannerList.map((String url) {
+                return DropdownMenuItem<String>(
+                  value: url,
+                  child: Image.network(
+                    url,
+                    height: 200,
+                    width: 300,
+                    fit: BoxFit.cover,
+                  ),
+                );
+              }).toList(),
+              onChanged: (String? newValue) {
+                setState(() {
+                  _selectedBanner = newValue!;
+                });
+              },
+              decoration: InputDecoration(
+                labelText: 'Seleccionar Banner',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
             ),
             const SizedBox(height: 20),
             ElevatedButton(
@@ -141,8 +259,8 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: _deleteAccount,
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.black),
+              onPressed: _showDeleteDialog,
+              style: ElevatedButton.styleFrom(primary: Colors.red),
               child: Text('Eliminar Cuenta'),
             ),
           ],
