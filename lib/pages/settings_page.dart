@@ -199,7 +199,7 @@ class _SettingsPageState extends State<SettingsPage> {
                             fit: BoxFit.cover,
                           )
                         : Image.asset(
-                            "assets/default_assets/default_pfp.jpg",
+                            "assets/default_pfp.jpg",
                             width: 160,
                             height: 160,
                             fit: BoxFit.cover,

@@ -66,9 +66,9 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
-    - assets/default_assets/default_pfp.jpg
-    - assets/default_assets/admin_pfp.jpg
-    - assets/default_assets/admin_banner.jpg
+    - assets/default_pfp.jpg
+    - assets/admin_pfp.jpg
+    - assets/admin_banner.jpg
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

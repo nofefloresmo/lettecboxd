@@ -93,7 +93,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
             DrawerHeader(
               decoration: const BoxDecoration(
                 image: DecorationImage(
-                  image: AssetImage("assets/default_assets/admin_banner.png"),
+                  image: AssetImage("assets/admin_banner.png"),
                   fit: BoxFit.cover,
                 ),
               ),
@@ -103,8 +103,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                 alignment: Alignment.center,
                 child: const CircleAvatar(
                   radius: 50,
-                  backgroundImage:
-                      AssetImage("assets/default_assets/admin_pfp.jpg"),
+                  backgroundImage: AssetImage("assets/admin_pfp.jpg"),
                 ),
               ),
             ),
@@ -267,7 +266,7 @@ class _RegularHomePageState extends State<RegularHomePage> {
                             fit: BoxFit.cover,
                           )
                         : Image.asset(
-                            "assets/default_assets/default_pfp.jpg",
+                            "assets/default_pfp.jpg",
                             width: 100,
                             height: 100,
                             fit: BoxFit.cover,
