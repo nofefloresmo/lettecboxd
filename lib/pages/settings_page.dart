@@ -78,11 +78,42 @@ class _SettingsPageState extends State<SettingsPage> {
 
       await widget.user.reauthenticateWithCredential(credential);
 
+      // Eliminar las reseñas del usuario
+      var reviewsQuery = await FirebaseFirestore.instance
+          .collection('reviews')
+          .where('userId', isEqualTo: widget.user.uid)
+          .get();
+
+      for (var review in reviewsQuery.docs) {
+        await review.reference.delete();
+      }
+
+      // Eliminar la foto de perfil del usuario del storage
+      final profilePicRefJpg = FirebaseStorage.instance
+          .ref()
+          .child('profiles/${widget.user.uid}/profile.jpg');
+      final profilePicRefPng = FirebaseStorage.instance
+          .ref()
+          .child('profiles/${widget.user.uid}/profile.png');
+
+      try {
+        await profilePicRefJpg.delete();
+      } catch (e) {
+        // Ignorar el error si el archivo no existe
+      }
+
+      try {
+        await profilePicRefPng.delete();
+      } catch (e) {
+        // Ignorar el error si el archivo no existe
+      }
+
       await FirebaseFirestore.instance
           .collection('users')
           .doc(widget.user.uid)
           .delete();
       await widget.user.delete();
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => LoginPage()),
