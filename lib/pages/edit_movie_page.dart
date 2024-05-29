@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:multi_select_flutter/multi_select_flutter.dart';
+import '../models/log_model.dart';
 
 class EditMoviePage extends StatelessWidget {
   @override
@@ -168,6 +169,13 @@ class EditMoviePage extends StatelessWidget {
                   'description': descriptionController.text.trim(),
                   'genre': genres,
                 });
+
+                // Registro del log en la base de datos local
+                await Log.insertLog(Log(
+                  action: 'Modificar',
+                  movieName: movie['name'],
+                  timestamp: DateTime.now(),
+                ));
 
                 Navigator.pop(context);
               },

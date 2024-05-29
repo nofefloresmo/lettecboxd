@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import '../models/log_model.dart';
 
 class DeleteMoviePage extends StatelessWidget {
   @override
@@ -67,6 +68,13 @@ class DeleteMoviePage extends StatelessWidget {
   Future<void> _deleteMovie(DocumentSnapshot movie) async {
     String posterPath = movie['movie_poster_path'];
     String bannerPath = movie['movie_banner_path'];
+
+    // Registro del log en la base de datos local
+    await Log.insertLog(Log(
+      action: 'Eliminar',
+      movieName: movie['name'],
+      timestamp: DateTime.now(),
+    ));
 
     // Eliminar documento de Firestore
     await FirebaseFirestore.instance

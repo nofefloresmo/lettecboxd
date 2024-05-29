@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:multi_select_flutter/multi_select_flutter.dart';
+import '../models/log_model.dart';
 
 class AddMoviePage extends StatefulWidget {
   @override
@@ -131,6 +132,13 @@ class _AddMoviePageState extends State<AddMoviePage> {
         'movie_poster_path': posterPath,
         'movie_banner_path': bannerPath,
       });
+
+      // Registro del log en la base de datos local
+      await Log.insertLog(Log(
+        action: 'Insertar',
+        movieName: _nameController.text.trim(),
+        timestamp: DateTime.now(),
+      ));
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Película añadida exitosamente')),

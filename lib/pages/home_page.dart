@@ -9,6 +9,7 @@ import 'settings_page.dart';
 import 'add_movie_page.dart'; // Página para agregar nuevas películas
 import 'edit_movie_page.dart'; // Página para editar películas
 import 'delete_movie_page.dart'; // Página para eliminar películas
+import 'logs_page.dart'; // Página para visualizar logs de transacciones
 
 class HomePage extends StatelessWidget {
   final User user;
@@ -263,6 +264,46 @@ class _AdminHomePageState extends State<AdminHomePage> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => DeleteMoviePage()),
+                );
+              },
+            ),
+            ListTile(
+              title: Row(
+                children: [
+                  Expanded(
+                    child: Icon(Icons.history,
+                        color: Colors.orangeAccent,
+                        size: 30,
+                        shadows: [
+                          Shadow(color: Colors.orangeAccent, blurRadius: 18),
+                          Shadow(
+                              color: Colors.orangeAccent.withOpacity(0.5),
+                              blurRadius: 28),
+                        ]),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      'Logs',
+                      style: TextStyle(
+                        color: Colors.orangeAccent,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        shadows: [
+                          Shadow(color: Colors.orangeAccent, blurRadius: 18),
+                          Shadow(
+                              color: Colors.orangeAccent.withOpacity(0.5),
+                              blurRadius: 28),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LogsPage()),
                 );
               },
             ),
