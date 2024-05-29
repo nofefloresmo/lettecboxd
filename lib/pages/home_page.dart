@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import '../models/movie_model.dart';
 import 'login_page.dart';
 import 'movie_page.dart';
@@ -470,6 +471,11 @@ class _RegularHomePageState extends State<RegularHomePage> {
     });
   }
 
+  Future<String> _getPosterUrl(String posterPath) async {
+    final ref = FirebaseStorage.instance.ref().child('posters/$posterPath');
+    return await ref.getDownloadURL();
+  }
+
   void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -738,41 +744,154 @@ class _RegularHomePageState extends State<RegularHomePage> {
       ),
       body: _movies.isEmpty
           ? Center(child: CircularProgressIndicator())
-          : ListView.builder(
-              itemCount: _movies.length,
-              itemBuilder: (context, index) {
-                Movie movie = _movies[index];
-                return FutureBuilder(
-                  future: movie.getMoviePoster(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return ListTile(
-                        leading: CircularProgressIndicator(),
-                        title: Text(movie.name),
-                      );
-                    } else if (snapshot.hasError) {
-                      return ListTile(
-                        leading: Icon(Icons.error),
-                        title: Text(movie.name),
-                      );
-                    } else {
-                      return ListTile(
-                        leading: Image.network(snapshot.data as String),
-                        title: Text(movie.name),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => MoviePage(movie: movie),
+          : ListView(
+              children: [
+                moviesByGenreLV('Action', getMoviesByGenre('Action')),
+                moviesByGenreLV('Thriller', getMoviesByGenre('Thriller')),
+                moviesByGenreLV('Comedy', getMoviesByGenre('Comedy')),
+                moviesByGenreLV('Crime', getMoviesByGenre('Crime')),
+                moviesByGenreLV('Drama', getMoviesByGenre('Drama')),
+                moviesByGenreLV('Horror', getMoviesByGenre('Horror')),
+                moviesByGenreLV('Sci-Fi', getMoviesByGenre('Sci-Fi')),
+                moviesByGenreLV('Romance', getMoviesByGenre('Romance')),
+                moviesByGenreLV('Adventure', getMoviesByGenre('Adventure')),
+                moviesByGenreLV('Fantasy', getMoviesByGenre('Fantasy')),
+                moviesByGenreLV('Music', getMoviesByGenre('Music')),
+                moviesByGenreLV('Family', getMoviesByGenre('Family')),
+              ],
+            ),
+    );
+  }
+
+  List<Movie> getMoviesByGenre(String genre) {
+    return _movies.where((movie) => movie.genre.contains(genre)).toList();
+  }
+
+  Widget moviesByGenreLV(String genre, List<Movie> movies) {
+    final Map<String, Color> genresByColor = {
+      "Action": Colors.redAccent,
+      "Comedy": Colors.greenAccent,
+      "Drama": Colors.blueAccent,
+      "Horror": Colors.purpleAccent,
+      "Sci-Fi": Colors.orangeAccent,
+      "Adventure": Colors.yellowAccent,
+      "Fantasy": Colors.pinkAccent,
+      "Family": Colors.tealAccent,
+      "Thriller": Colors.amberAccent,
+      "Crime": Colors.deepOrangeAccent,
+      "Music": Colors.limeAccent,
+      "Romance": Colors.indigoAccent,
+    };
+
+    final bool isPopular = genre == "Popular";
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(
+          height: 10,
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Text(
+            genre,
+            style: TextStyle(
+              fontFamily: "NeonTubes",
+              fontSize: isPopular ? 40 : 30,
+              fontWeight: FontWeight.bold,
+              color: Colors.white.withOpacity(0.7),
+              shadows: [
+                Shadow(
+                  color: isPopular ? Colors.pinkAccent : genresByColor[genre]!,
+                  blurRadius: 18,
+                ),
+                Shadow(
+                  color: isPopular
+                      ? Colors.pinkAccent
+                      : genresByColor[genre]!.withOpacity(0.5),
+                  blurRadius: 28,
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(
+          height: 5,
+        ),
+        SizedBox(
+          height: isPopular ? 330 : 250,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: movies.length,
+            itemBuilder: (context, index) {
+              return Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: isPopular ? 180 : 130,
+                    alignment: Alignment.center,
+                    child: Text(movies[index].name,
+                        style: TextStyle(
+                          shadows: [
+                            Shadow(
+                              color: isPopular
+                                  ? Colors.pinkAccent
+                                  : genresByColor[genre]!,
+                              blurRadius: 18,
+                            ),
+                            Shadow(
+                              color: isPopular
+                                  ? Colors.pinkAccent
+                                  : genresByColor[genre]!.withOpacity(0.5),
+                              blurRadius: 28,
+                            ),
+                          ],
+                          color: Colors.white.withOpacity(0.7),
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          overflow: TextOverflow.ellipsis,
+                        )),
+                  ),
+                  const SizedBox(height: 5),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) =>
+                                  MoviePage(movie: movies[index])));
+                    },
+                    child: FutureBuilder(
+                      future: _getPosterUrl(movies[index].moviePosterPath),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return CircularProgressIndicator();
+                        } else if (snapshot.hasError) {
+                          return Icon(Icons.error);
+                        } else {
+                          return Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 8),
+                            height: isPopular ? 300 : 200,
+                            width: isPopular ? 190 : 130,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(20),
+                              image: DecorationImage(
+                                image: NetworkImage(snapshot.data!),
+                                fit: BoxFit.cover,
+                              ),
                             ),
                           );
-                        },
-                      );
-                    }
-                  },
-                );
-              },
-            ),
+                        }
+                      },
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }
