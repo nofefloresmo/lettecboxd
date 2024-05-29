@@ -3,10 +3,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/movie_model.dart';
 import 'login_page.dart';
-import 'add_movie_page.dart';
 import 'movie_page.dart';
 import 'my_reviews_page.dart';
 import 'settings_page.dart';
+import 'add_movie_page.dart'; // Página para agregar nuevas películas
+import 'edit_movie_page.dart'; // Página para editar películas
+import 'delete_movie_page.dart'; // Página para eliminar películas
 
 class HomePage extends StatelessWidget {
   final User user;
@@ -93,7 +95,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
             DrawerHeader(
               decoration: const BoxDecoration(
                 image: DecorationImage(
-                  image: AssetImage("assets/admin_banner.png"),
+                  image: AssetImage("assets/admin_banner.jpg"),
                   fit: BoxFit.cover,
                 ),
               ),
@@ -106,6 +108,163 @@ class _AdminHomePageState extends State<AdminHomePage> {
                   backgroundImage: AssetImage("assets/admin_pfp.jpg"),
                 ),
               ),
+            ),
+            ListTile(
+              title: Row(
+                children: [
+                  Expanded(
+                    child: Icon(Icons.home,
+                        color: Colors.white,
+                        size: 30,
+                        shadows: [
+                          Shadow(color: Colors.white, blurRadius: 18),
+                          Shadow(
+                              color: Colors.white.withOpacity(0.5),
+                              blurRadius: 28),
+                        ]),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      'Inicio',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        shadows: [
+                          Shadow(color: Colors.white, blurRadius: 18),
+                          Shadow(
+                              color: Colors.white.withOpacity(0.5),
+                              blurRadius: 28),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              onTap: () {
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              title: Row(
+                children: [
+                  Expanded(
+                    child: Icon(Icons.add,
+                        color: Colors.blueAccent,
+                        size: 30,
+                        shadows: [
+                          Shadow(color: Colors.blueAccent, blurRadius: 18),
+                          Shadow(
+                              color: Colors.blueAccent.withOpacity(0.5),
+                              blurRadius: 28),
+                        ]),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      'Insertar Películas',
+                      style: TextStyle(
+                        color: Colors.blueAccent,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        shadows: [
+                          Shadow(color: Colors.blueAccent, blurRadius: 18),
+                          Shadow(
+                              color: Colors.blueAccent.withOpacity(0.5),
+                              blurRadius: 28),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => AddMoviePage()),
+                );
+              },
+            ),
+            ListTile(
+              title: Row(
+                children: [
+                  Expanded(
+                    child: Icon(Icons.edit,
+                        color: Colors.orangeAccent,
+                        size: 30,
+                        shadows: [
+                          Shadow(color: Colors.orangeAccent, blurRadius: 18),
+                          Shadow(
+                              color: Colors.orangeAccent.withOpacity(0.5),
+                              blurRadius: 28),
+                        ]),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      'Editar Películas',
+                      style: TextStyle(
+                        color: Colors.orangeAccent,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        shadows: [
+                          Shadow(color: Colors.orangeAccent, blurRadius: 18),
+                          Shadow(
+                              color: Colors.orangeAccent.withOpacity(0.5),
+                              blurRadius: 28),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => EditMoviePage()),
+                );
+              },
+            ),
+            ListTile(
+              title: Row(
+                children: [
+                  Expanded(
+                    child: Icon(Icons.delete,
+                        color: Colors.redAccent,
+                        size: 30,
+                        shadows: [
+                          Shadow(color: Colors.redAccent, blurRadius: 18),
+                          Shadow(
+                              color: Colors.redAccent.withOpacity(0.5),
+                              blurRadius: 28),
+                        ]),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      'Eliminar Películas',
+                      style: TextStyle(
+                        color: Colors.redAccent,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        shadows: [
+                          Shadow(color: Colors.redAccent, blurRadius: 18),
+                          Shadow(
+                              color: Colors.redAccent.withOpacity(0.5),
+                              blurRadius: 28),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => DeleteMoviePage()),
+                );
+              },
             ),
             ListTile(
               title: Row(
@@ -150,16 +309,84 @@ class _AdminHomePageState extends State<AdminHomePage> {
       appBar: AppBar(
         title: const Text('Admin Home'),
       ),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => AddMoviePage()),
-            );
-          },
-          child: const Text('Agregar Película'),
-        ),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance.collection('movies').snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+
+          if (!snapshot.hasData) {
+            return Center(child: Text('No hay datos disponibles.'));
+          }
+
+          var movies = snapshot.data!.docs;
+
+          int totalMovies = movies.length;
+          Map<String, int> genreCounts = {};
+
+          for (var doc in movies) {
+            List<String> movieGenres = (doc['genre'] as String)
+                .split(', ')
+                .map((genre) => genre.trim())
+                .toList();
+            for (String genre in movieGenres) {
+              if (genreCounts.containsKey(genre)) {
+                genreCounts[genre] = genreCounts[genre]! + 1;
+              } else {
+                genreCounts[genre] = 1;
+              }
+            }
+          }
+
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Estadísticas',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Total de Películas: $totalMovies',
+                  style: TextStyle(
+                    fontSize: 18,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Películas por Género:',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: genreCounts.keys.length,
+                    itemBuilder: (context, index) {
+                      String genre = genreCounts.keys.elementAt(index);
+                      int count = genreCounts[genre]!;
+                      return ListTile(
+                        title: Text(genre),
+                        trailing: Text(count.toString()),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -255,26 +482,59 @@ class _RegularHomePageState extends State<RegularHomePage> {
                 width: double.infinity,
                 alignment: Alignment.center,
                 child: CircleAvatar(
-                  radius: 50,
+                  radius: 60,
                   child: ClipOval(
                     child: profilePictureUrl != null &&
                             profilePictureUrl!.isNotEmpty
                         ? Image.network(
                             profilePictureUrl!,
-                            width: 100,
-                            height: 100,
+                            width: 120,
+                            height: 120,
                             fit: BoxFit.cover,
                           )
                         : Image.asset(
                             "assets/default_pfp.jpg",
-                            width: 100,
-                            height: 100,
+                            width: 120,
+                            height: 120,
                             fit: BoxFit.cover,
                           ),
                   ),
                 ),
               ),
             ),
+            const SizedBox(height: 10),
+            Center(
+              child: Text(
+                username,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  shadows: [
+                    Shadow(
+                      color: Colors.black,
+                      blurRadius: 10,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Center(
+              child: Text(
+                widget.user.email!,
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 14,
+                  shadows: [
+                    Shadow(
+                      color: Colors.black,
+                      blurRadius: 10,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            SizedBox(height: 30),
             ListTile(
               title: Row(
                 children: [

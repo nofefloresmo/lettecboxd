@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'login_page.dart';
+import 'home_page.dart';
 
 class SettingsPage extends StatefulWidget {
   final User user;
@@ -40,9 +41,9 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _updateUserProfile() async {
-    String? profileImageUrl;
+    String? newProfileImageUrl;
     if (_profileImage != null) {
-      profileImageUrl = await _uploadImage(
+      newProfileImageUrl = await _uploadImage(
         _profileImage!,
         'profiles/${widget.user.uid}/profile.jpg',
       );
@@ -53,24 +54,18 @@ class _SettingsPageState extends State<SettingsPage> {
         .doc(widget.user.uid)
         .update({
       'username': _usernameController.text.trim(),
-      if (profileImageUrl != null) 'profilePicture': profileImageUrl,
+      if (newProfileImageUrl != null) 'profilePicture': newProfileImageUrl,
       'bannerPicture': _selectedBanner,
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Perfil actualizado con éxito')),
     );
-  }
 
-  Future<void> _deleteAccount() async {
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(widget.user.uid)
-        .delete();
-    await widget.user.delete();
+    // Redirigir a la pantalla de inicio después de actualizar el perfil
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => LoginPage()),
+      MaterialPageRoute(builder: (context) => HomePage(user: widget.user)),
     );
   }
 
@@ -182,29 +177,20 @@ class _SettingsPageState extends State<SettingsPage> {
         title: Text('Configuración'),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 100.0),
         child: Column(
           children: [
             Stack(
               children: [
                 CircleAvatar(
                   radius: 80,
-                  child: ClipOval(
-                    child: profilePictureUrl != null &&
-                            profilePictureUrl!.isNotEmpty
-                        ? Image.network(
-                            profilePictureUrl!,
-                            width: 160,
-                            height: 160,
-                            fit: BoxFit.cover,
-                          )
-                        : Image.asset(
-                            "assets/default_pfp.jpg",
-                            width: 160,
-                            height: 160,
-                            fit: BoxFit.cover,
-                          ),
-                  ),
+                  backgroundImage: _profileImage != null
+                      ? FileImage(_profileImage!)
+                      : (profilePictureUrl != null &&
+                              profilePictureUrl!.isNotEmpty
+                          ? NetworkImage(profilePictureUrl!)
+                          : AssetImage("assets/default_pfp.jpg")
+                              as ImageProvider),
                 ),
                 Positioned(
                   bottom: 0,
@@ -231,10 +217,11 @@ class _SettingsPageState extends State<SettingsPage> {
               value: _selectedBanner.isEmpty ? null : _selectedBanner,
               items: _bannerList.map((String url) {
                 return DropdownMenuItem<String>(
+                  alignment: Alignment.center,
                   value: url,
                   child: Image.network(
                     url,
-                    height: 200,
+                    height: 150,
                     width: 300,
                     fit: BoxFit.cover,
                   ),
@@ -260,8 +247,12 @@ class _SettingsPageState extends State<SettingsPage> {
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: _showDeleteDialog,
-              style: ElevatedButton.styleFrom(primary: Colors.red),
-              child: Text('Eliminar Cuenta'),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              child: const Text(
+                'Eliminar Cuenta',
+                style:
+                    TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         ),
